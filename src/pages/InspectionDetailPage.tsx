@@ -82,10 +82,26 @@ export function InspectionDetailPage() {
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700">Site Image</h3>
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+            <h3 className="flex items-center justify-between gap-2 text-sm font-bold uppercase tracking-wide text-slate-700">
+              <span>Site Image</span>
               {job.originalImageUrl ? (
-                <img src={job.originalImageUrl} alt="Original site" className="h-64 w-full object-cover" />
+                <a
+                  href={job.originalImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-bold normal-case text-amber-700 hover:text-amber-800 print:hidden"
+                >
+                  Open full image
+                </a>
+              ) : null}
+            </h3>
+            <div className="rounded-lg border border-slate-200 bg-slate-100 p-2">
+              {job.originalImageUrl ? (
+                <img
+                  src={job.originalImageUrl}
+                  alt="Original site"
+                  className="max-h-[36rem] w-full rounded-md object-contain"
+                />
               ) : (
                 <div className="flex h-64 items-center justify-center text-sm text-slate-500">
                   Image unavailable
@@ -94,12 +110,26 @@ export function InspectionDetailPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700">
-              Safety Markup
-            </h3>
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+            <h3 className="flex items-center justify-between gap-2 text-sm font-bold uppercase tracking-wide text-slate-700">
+              <span>Safety Markup</span>
               {job.resultImageUrl ? (
-                <img src={job.resultImageUrl} alt="Analyzed site" className="h-64 w-full object-cover" />
+                <a
+                  href={job.resultImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-bold normal-case text-amber-700 hover:text-amber-800 print:hidden"
+                >
+                  Open full image
+                </a>
+              ) : null}
+            </h3>
+            <div className="rounded-lg border border-slate-200 bg-slate-100 p-2">
+              {job.resultImageUrl ? (
+                <img
+                  src={job.resultImageUrl}
+                  alt="Analyzed site"
+                  className="max-h-[36rem] w-full rounded-md object-contain"
+                />
               ) : (
                 <div className="flex h-64 items-center justify-center text-sm text-slate-500">
                   Result image not available

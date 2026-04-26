@@ -60,21 +60,55 @@ export function InspectionCard({
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <figure className="space-y-2">
-          <figcaption className="text-sm font-semibold text-slate-700">Site Image</figcaption>
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+          <figcaption className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-700">
+            <span>Site Image</span>
             {job.originalImageUrl ? (
-              <img src={job.originalImageUrl} alt="Site upload" className="h-56 w-full object-cover" />
+              <a
+                href={job.originalImageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-bold text-amber-700 hover:text-amber-800"
+              >
+                Open full image
+              </a>
+            ) : null}
+          </figcaption>
+          <div className="rounded-lg border border-slate-200 bg-slate-100 p-2">
+            {job.originalImageUrl ? (
+              <img
+                src={job.originalImageUrl}
+                alt="Site upload"
+                className="max-h-[28rem] w-full rounded-md object-contain"
+              />
             ) : (
-              <div className="flex h-56 items-center justify-center text-sm text-slate-500">Image unavailable</div>
+              <div className="flex h-56 items-center justify-center text-sm text-slate-500">
+                Image unavailable
+              </div>
             )}
           </div>
         </figure>
 
         <figure className="space-y-2">
-          <figcaption className="text-sm font-semibold text-slate-700">Safety Markup</figcaption>
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+          <figcaption className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-700">
+            <span>Safety Markup</span>
+            {job.resultImageUrl ? (
+              <a
+                href={job.resultImageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-bold text-amber-700 hover:text-amber-800"
+              >
+                Open full image
+              </a>
+            ) : null}
+          </figcaption>
+          <div className="rounded-lg border border-slate-200 bg-slate-100 p-2">
             {job.status === "completed" && job.resultImageUrl ? (
-              <img src={job.resultImageUrl} alt="Safety analysis result" className="h-56 w-full object-cover" />
+              <img
+                src={job.resultImageUrl}
+                alt="Safety analysis result"
+                className="max-h-[28rem] w-full rounded-md object-contain"
+              />
             ) : (
               <div className="flex h-56 flex-col items-center justify-center gap-2 text-sm text-slate-500">
                 <div className="h-3 w-40 animate-pulse rounded bg-slate-200" />
