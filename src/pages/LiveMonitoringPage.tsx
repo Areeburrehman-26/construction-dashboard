@@ -8,14 +8,17 @@ import { InspectionCard } from "../components/InspectionCard";
 import { SafetyMetricCard } from "../components/SafetyMetricCard";
 import type { DatasetCategory, InferenceMode } from "../utils/jobs";
 
-const LIVE_WS_URL =
+/** Swap this URL for your Ngrok tunnel (must be `wss://`, not `https://`). */
+const WS_URL =
   import.meta.env.VITE_WS_URL ?? "wss://fadedly-unarticulative-nicolas.ngrok-free.dev/ws";
 
 export function LiveMonitoringPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"static" | "live">("static");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [mode, setMode] = useState<InferenceMode>("both");
+  const [aiMode, setAiMode] = useState<InferenceMode>("both");
+  const aiModeRef = useRef<InferenceMode>(aiMode);
+  aiModeRef.current = aiMode;
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [submittingFeedback, setSubmittingFeedback] = useState<Id<"inferences"> | null>(
@@ -86,7 +89,7 @@ export function LiveMonitoringPage() {
         await videoRef.current.play();
       }
 
-      const ws = new WebSocket(LIVE_WS_URL);
+      const ws = new WebSocket(WS_URL);
       wsRef.current = ws;
       setIsStreaming(true);
 
@@ -105,8 +108,13 @@ export function LiveMonitoringPage() {
           if (!ctx) return;
 
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const base64Frame = canvas.toDataURL("image/jpeg", 0.6);
-          ws.send(base64Frame);
+          const base64Image = canvas.toDataURL("image/jpeg", 0.6);
+          ws.send(
+            JSON.stringify({
+              mode: aiModeRef.current,
+              image: base64Image,
+            }),
+          );
         }, 100);
       };
 
@@ -161,10 +169,10 @@ export function LiveMonitoringPage() {
       if (!uploadResponse.ok) throw new Error("Could not upload image. Try again.");
 
       const { storageId } = (await uploadResponse.json()) as { storageId: Id<"_storage"> };
-      await createJob({ storageId, mode });
+      await createJob({ storageId, mode: aiMode });
 
       setSelectedFile(null);
-      setMode("both");
+      setAiMode("both");
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Upload failed.");
     } finally {
@@ -275,13 +283,13 @@ export function LiveMonitoringPage() {
               </label>
               <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                 <select
-                  value={mode}
-                  onChange={(event) => setMode(event.target.value as InferenceMode)}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  value={aiMode}
+                  onChange={(event) => setAiMode(event.target.value as InferenceMode)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm ring-amber-200 focus:border-amber-400 focus:outline-none focus:ring-2"
                 >
-                  <option value="both">Complete Safety Scan</option>
-                  <option value="ppe_only">Worker PPE Check</option>
-                  <option value="crack_only">Structural Crack Check</option>
+                  <option value="both">Full Analysis (PPE + Cracks)</option>
+                  <option value="ppe_only">Worker Safety Only (PPE)</option>
+                  <option value="crack_only">Infrastructure Only (Cracks)</option>
                 </select>
                 <button
                   type="submit"
@@ -344,7 +352,26 @@ export function LiveMonitoringPage() {
             )}
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 space-y-3">
+            <div className="flex flex-col gap-1.5 sm:max-w-md">
+              <label
+                htmlFor="live-ai-mode"
+                className="text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                AI analysis mode
+              </label>
+              <select
+                id="live-ai-mode"
+                value={aiMode}
+                onChange={(event) => setAiMode(event.target.value as InferenceMode)}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm ring-amber-200 focus:border-amber-400 focus:outline-none focus:ring-2"
+              >
+                <option value="both">Full Analysis (PPE + Cracks)</option>
+                <option value="ppe_only">Worker Safety Only (PPE)</option>
+                <option value="crack_only">Infrastructure Only (Cracks)</option>
+              </select>
+            </div>
+            <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={startLiveStream}
@@ -370,6 +397,7 @@ export function LiveMonitoringPage() {
             >
               {isLiveConnected ? "Connected" : "Not Connected"}
             </span>
+            </div>
           </div>
 
           {liveError ? <p className="mt-3 text-sm font-semibold text-red-700">{liveError}</p> : null}
