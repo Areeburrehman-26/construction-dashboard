@@ -1,5 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import {
+  type SubmitEventHandler,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -204,7 +209,7 @@ export function LiveMonitoringPage() {
     };
   }, [stopLiveStream]);
 
-  const handleUpload = async (event: FormEvent<HTMLFormElement>) => {
+  const handleUpload: SubmitEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
     if (!selectedFile) {
       setUploadError("Please choose an image first.");
