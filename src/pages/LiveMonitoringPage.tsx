@@ -8,6 +8,8 @@ import { InspectionCard } from "../components/InspectionCard";
 import { SafetyMetricCard } from "../components/SafetyMetricCard";
 import type { DatasetCategory, InferenceMode } from "../utils/jobs";
 
+type CameraFacing = "user" | "environment";
+
 /** Swap this URL for your Ngrok tunnel (must be `wss://`, not `https://`). */
 const WS_URL =
   import.meta.env.VITE_WS_URL ?? "wss://fadedly-unarticulative-nicolas.ngrok-free.dev/ws";
@@ -29,6 +31,8 @@ export function LiveMonitoringPage() {
   const [liveError, setLiveError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<CameraFacing>("user");
+  const [switchingCamera, setSwitchingCamera] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -69,7 +73,58 @@ export function LiveMonitoringPage() {
 
     setIsStreaming(false);
     setIsLiveConnected(false);
+    setSwitchingCamera(false);
   }, []);
+
+  const applyCameraFacing = useCallback(
+    async (next: CameraFacing) => {
+      if (!isStreaming) {
+        setCameraFacing(next);
+        return;
+      }
+      if (next === cameraFacing || switchingCamera) return;
+
+      const video = videoRef.current;
+      if (!video) return;
+
+      const previousFacing = cameraFacing;
+      setSwitchingCamera(true);
+      try {
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+          mediaStreamRef.current = null;
+        }
+        video.srcObject = null;
+
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: next },
+          audio: false,
+        });
+        mediaStreamRef.current = mediaStream;
+        video.srcObject = mediaStream;
+        await video.play();
+        setCameraFacing(next);
+        setLiveError(null);
+      } catch {
+        setLiveError("Could not switch camera. Try again.");
+        try {
+          const restore = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: previousFacing },
+            audio: false,
+          });
+          mediaStreamRef.current = restore;
+          video.srcObject = restore;
+          await video.play();
+        } catch {
+          stopLiveStream();
+          setLiveError("Camera error. Stream stopped.");
+        }
+      } finally {
+        setSwitchingCamera(false);
+      }
+    },
+    [cameraFacing, isStreaming, stopLiveStream, switchingCamera],
+  );
 
   const startLiveStream = async () => {
     if (isStreaming) return;
@@ -79,7 +134,7 @@ export function LiveMonitoringPage() {
       setLiveFrame(null);
 
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+        video: { facingMode: cameraFacing },
         audio: false,
       });
       mediaStreamRef.current = mediaStream;
@@ -332,7 +387,7 @@ export function LiveMonitoringPage() {
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-xl font-bold">Live Camera Monitoring</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Real-time PPE detection from your laptop camera.
+            Real-time detection from your device camera. On phones, switch between front and back below.
           </p>
 
           <video ref={videoRef} className="hidden" playsInline muted />
@@ -371,32 +426,67 @@ export function LiveMonitoringPage() {
                 <option value="crack_only">Infrastructure Only (Cracks)</option>
               </select>
             </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Camera
+              </span>
+              <div
+                className="flex max-w-md rounded-xl border border-slate-200 bg-slate-100 p-1"
+                role="group"
+                aria-label="Choose front or back camera"
+              >
+                <button
+                  type="button"
+                  onClick={() => void applyCameraFacing("user")}
+                  disabled={switchingCamera}
+                  className={`min-h-[44px] flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors sm:min-h-0 ${
+                    cameraFacing === "user"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:bg-white/60"
+                  } disabled:opacity-50`}
+                >
+                  Front
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void applyCameraFacing("environment")}
+                  disabled={switchingCamera}
+                  className={`min-h-[44px] flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors sm:min-h-0 ${
+                    cameraFacing === "environment"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:bg-white/60"
+                  } disabled:opacity-50`}
+                >
+                  Back
+                </button>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={startLiveStream}
-              disabled={isStreaming}
-              className="rounded-lg bg-amber-500 px-5 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              Start Stream
-            </button>
-            <button
-              type="button"
-              onClick={stopLiveStream}
-              disabled={!isStreaming}
-              className="rounded-lg bg-slate-800 px-5 py-2 text-sm font-bold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-            >
-              Stop Stream
-            </button>
-            <span
-              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                isLiveConnected
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {isLiveConnected ? "Connected" : "Not Connected"}
-            </span>
+              <button
+                type="button"
+                onClick={startLiveStream}
+                disabled={isStreaming || switchingCamera}
+                className="rounded-lg bg-amber-500 px-5 py-2 text-sm font-bold text-slate-950 hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                Start Stream
+              </button>
+              <button
+                type="button"
+                onClick={stopLiveStream}
+                disabled={!isStreaming}
+                className="rounded-lg bg-slate-800 px-5 py-2 text-sm font-bold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
+                Stop Stream
+              </button>
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                  isLiveConnected
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                {isLiveConnected ? "Connected" : "Not Connected"}
+              </span>
             </div>
           </div>
 
