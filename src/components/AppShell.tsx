@@ -1,4 +1,4 @@
-import { ClipboardList, House, Siren, TrendingUp, FileText } from "lucide-react";
+import { ClipboardList, House, Images, Siren, TrendingUp, FileText } from "lucide-react";
 import { Menu, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -10,6 +10,7 @@ const navItems = [
   { to: "/trends", label: "Safety Trends", icon: TrendingUp },
   { to: "/alerts", label: "Alerts & Actions", icon: Siren },
   { to: "/reports", label: "Reports", icon: FileText },
+  { to: "/training-gallery", label: "Training visuals", icon: Images },
 ];
 
 type AppShellProps = {

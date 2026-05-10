@@ -6,6 +6,7 @@ import { InspectionDetailPage } from "./pages/InspectionDetailPage";
 import { LiveMonitoringPage } from "./pages/LiveMonitoringPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { SafetyTrendsPage } from "./pages/SafetyTrendsPage";
+import { TrainingGalleryPage } from "./pages/TrainingGalleryPage";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/trends" element={<SafetyTrendsPage />} />
         <Route path="/alerts" element={<AlertsActionsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/training-gallery" element={<TrainingGalleryPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
